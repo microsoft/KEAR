@@ -1,14 +1,40 @@
-# Project
+# Multi-task Learning with Sample Re-weighting for Machine Reading Comprehension
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+This PyTorch package implements the DEKCOR model for Commonsense Question Answering, as described in:
 
-As the maintainer of this project, please make a few updates:
+Yichong Xu∗, Chenguang Zhu∗, Ruochen Xu, Yang Liu, Michael Zeng and Xuedong Huang<br/>
+Fusing Context Into Knowledge Graph for Commonsense QuestionAnswering</br>
+The 59th Annual Meeting of the Association for Computational Linguistics (ACL), 2021<br/>
+[arXiv version](https://arxiv.org/pdf/2012.04808.pdf)
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+Please cite the above paper if you use this code. 
+
+## Results
+This package achieves the state-of-art performance of 80.7% (single model), 83.3% (ensemble) on the [CommonsenseQA leaderboard](https://www.tau-nlp.org/csqa-leaderboard).
+
+## Quickstart 
+
+1. pull docker: </br>
+   ```> docker pull yichongx/csqa:acl2021```
+
+2. run docker </br>
+   ```> nvidia-docker run -it --mount src='/',target=/workspace/,type=bind yichongx/csqa:acl2021 /bin/bash``` </br>
+    Please refer to the following link if you first use docker: https://docs.docker.com/
+
+## Use the data
+Pre-processed data is located at ```data/```.
+
+## Use the code
+1. train a model
+   > bash bash/task_train.sh
+2. make prediction
+   > bash bash/task_predict.sh
+
+## Notes and Acknowledgments
+The code is developed based on KCR: https://github.com/jessionlin/csqa
+
+by Yichong Xu</br>
+yicxu@microsoft.com
 
 ## Contributing
 
