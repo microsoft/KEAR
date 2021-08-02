@@ -3,7 +3,7 @@
 This PyTorch package implements the DEKCOR model for Commonsense Question Answering, as described in:
 
 Yichong Xu∗, Chenguang Zhu∗, Ruochen Xu, Yang Liu, Michael Zeng and Xuedong Huang<br/>
-Fusing Context Into Knowledge Graph for Commonsense QuestionAnswering</br>
+[Fusing Context Into Knowledge Graph for Commonsense QuestionAnswering](https://aclanthology.org/2021.findings-acl.102.pdf)</br>
 The 59th Annual Meeting of the Association for Computational Linguistics (ACL), 2021<br/>
 [arXiv version](https://arxiv.org/pdf/2012.04808.pdf)
 
