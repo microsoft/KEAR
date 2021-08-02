@@ -1,3 +1,5 @@
+# Example training script
+
 export DATA_DIR="data/"
 export OUTPUT_DIR="output/"
 

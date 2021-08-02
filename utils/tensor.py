@@ -1,7 +1,6 @@
-"""
-convert_to_tensor(data, batch_soze, drop_last, shuffle)
-    data: [list1, list2, ...] => dataloader
-"""
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 
 
 from .feature import Feature

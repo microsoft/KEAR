@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 import os
 
 import logging; logging.getLogger("transformers").setLevel(logging.WARNING)

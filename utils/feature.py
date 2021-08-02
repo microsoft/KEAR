@@ -1,7 +1,5 @@
-"""
-1. Feature.make(idx, tokens1, tokens2, tokensizer, max_seq_length)
-2. Feature.make_single(idx, tokens1, tokenizer, max_seq_length)
-"""
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
 
 
 class Feature:

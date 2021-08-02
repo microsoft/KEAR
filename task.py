@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 from utils.base_trainer import BaseTrainer
 from utils import get_device
 from utils.tensor import clip_batch

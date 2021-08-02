@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
 from utils import _load_json
 from .example import ConceptNetExample
 
