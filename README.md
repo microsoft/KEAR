@@ -1,37 +1,62 @@
-# Fusing Context Into Knowledge Graph for Commonsense Question Answering
+# Human Parity on CommonsenseQA: Augmenting Self-Attention with External Attention
 
-This PyTorch package implements the DEKCOR model for Commonsense Question Answering, as described in:
+This PyTorch package implements the KEAR model that surpasses human on the CommonsenseQA benchmark, as described in:
+
+Yichong Xu, Chenguang Zhu, Shuohang Wang, Siqi Sun, Hao Cheng, Xiaodong Liu, Jianfeng Gao, Pengcheng He, Michael Zeng and Xuedong Huang<br/>
+[Human Parity on CommonsenseQA: Augmenting Self-Attention with External Attention](https://arxiv.org/pdf/2012.04808.pdf)</br>
+arXiv:2112.03254, 2021<br/>
+
+The package also includes codes for our earilier DEKCOR model as in:
 
 Yichong Xu∗, Chenguang Zhu∗, Ruochen Xu, Yang Liu, Michael Zeng and Xuedong Huang<br/>
-[Fusing Context Into Knowledge Graph for Commonsense Question Answering](https://aclanthology.org/2021.findings-acl.102.pdf)</br>
-Findings of The 59th Annual Meeting of the Association for Computational Linguistics (ACL), 2021<br/>
-[arXiv version](https://arxiv.org/pdf/2012.04808.pdf)
+[Fusing Context Into Knowledge Graph for Commonsense Question Answering](https://arxiv.org/pdf/2012.04808.pdf)</br>
+Findings of the 59th Annual Meeting of the Association for Computational Linguistics (ACL), 2021<br/>
 
-Please cite the above paper if you use this code. 
+Please cite the above papers if you use this code. 
 
 ## Results
-This package achieves the state-of-art performance of 80.7% (single model), 83.3% (ensemble) on the [CommonsenseQA leaderboard](https://www.tau-nlp.org/csqa-leaderboard).
+This package achieves the state-of-art performance of 86.1% (single model), 89.4% (ensemble) on the [CommonsenseQA leaderboard](https://www.tau-nlp.org/csqa-leaderboard), surpassing the human performance of 88.9%.
 
 ## Quickstart 
 
 1. pull docker: </br>
-   ```> docker pull yichongx/csqa:acl2021```
+   ```> docker pull yichongx/csqa:human_parity```
 
 2. run docker </br>
-   ```> nvidia-docker run -it --mount src='/',target=/workspace/,type=bind yichongx/csqa:acl2021 /bin/bash``` </br>
+   ```> nvidia-docker run -it --mount src='/',target=/workspace/,type=bind yichongx/csqa:human_parity /bin/bash``` </br>
     Please refer to the following link if you first use docker: https://docs.docker.com/
 
-## Use the data
+## Features
+
+Our code supports flexible training of various models on multiple choice QA.
+
+- Distributed training with Pytorch native DDP or [Deepspeed](https://www.deepspeed.ai/): see ``bash/task_train.sh``
+- Pause and resume training at any step; use option ``--continue_train``
+- Use any transformer encoders including ELECTRA, DeBERTa, ALBERT
+
+## Preprocessing data
 Pre-processed data is located at ```data/```.
 
-## Use the code
-1. train a model
-   > bash bash/task_train.sh
-2. make prediction
-   > bash bash/task_predict.sh
+We release codes for knowledge graph and dictionary external attention in ``preprocess/``
 
-## Notes and Acknowledgments
-The code is developed based on KCR: https://github.com/jessionlin/csqa
+1. Download data</br>
+   ```> cd preprocess```</br>
+   ```> bash download_data.sh```</br>
+2. Add ConceptNet triples and Wiktionary definitions to data</br>
+   ```> python add_knowledge.py```</br>
+3. We also add the most frequent relations in each question as a side information.</br>
+   ```> python add_freq_rel.py ```</br>
+
+## Training and Prediction
+1. train a model</br>
+   ```> bash bash/task_train.sh```
+2. make prediction</br>
+   ```> bash bash/task_predict.sh```
+See ``task.py`` for available options.
+
+## Running codes for DEKCOR
+
+The current code is mostly compatible to run DEKCOR. To run the original DEKCOR code, please checkout tag ``DEKCOR`` to use the previous version.
 
 by Yichong Xu</br>
 yicxu@microsoft.com

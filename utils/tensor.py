@@ -1,42 +1,49 @@
 # Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+# Licensed under the MIT license.
 
 
 
 from .feature import Feature
-
 import torch
 from torch.utils.data import DataLoader, RandomSampler, TensorDataset
+from .resumable_sampler import DistributedResumableSampler
 
 
 def clip_batch(batch):
     """
     clip batch based on max length
     """
-    # print("batch size is {}".format(len(batch[0])))
-    idx, input_ids, attention_mask, token_type_ids, labels = batch
-    # [batch_size, 2, L]
+    input_ids = batch[1]
+    attention_mask = batch[2]
+    token_type_ids = batch[3]
+    question_mask = batch[4]
     batch_size = input_ids.size(0)
+    num_dim = len(input_ids.size())
     while True:
         end_flag = False
         for i in range(batch_size):
-            if input_ids[i, 0, -1] != 0:
+            this_loc = input_ids[i, :, -1].any() if num_dim == 3 else input_ids[i, -1]
+            if this_loc != 0:
                 end_flag = True
-            if input_ids[i, 1, -1] != 0:
-                end_flag = True 
-        
+                break
         if end_flag:
             break
         else:
-            input_ids = input_ids[:, :, :-1]
-    
-    max_seq_length = input_ids.size(2)
-    attention_mask = attention_mask[:, :, :max_seq_length]
-    token_type_ids = token_type_ids[:, :, :max_seq_length]
-    
-    return idx, input_ids, attention_mask, token_type_ids, labels
+            input_ids = input_ids[:, :, :-1] if num_dim == 3 else input_ids[:, :-1]
+    max_seq_length = input_ids.size(-1)
+    if num_dim == 3:
+        attention_mask = attention_mask[:, :, :max_seq_length]
+        token_type_ids = token_type_ids[:, :, :max_seq_length]
+        question_mask = question_mask[:, :, :max_seq_length]
+    elif num_dim == 2:
+        attention_mask = attention_mask[:, :max_seq_length]
+        token_type_ids = token_type_ids[:, :max_seq_length]
+        question_mask = question_mask[:, :max_seq_length]
 
-def convert_to_tensor(data, batch_size, drop_last, shuffle):
+    batch = tuple([batch[0]] + [input_ids, attention_mask, token_type_ids, question_mask] + list(batch[5:]))
+    return batch
+
+def convert_to_tensor(data, squeeze_first=True):
     tensors = []
 
     for item in data:
@@ -57,24 +64,28 @@ def convert_to_tensor(data, batch_size, drop_last, shuffle):
         elif type(item[0]) is int:
             _tensor = torch.tensor(item, dtype=torch.long)
             tensors.append(_tensor)
+        
+        elif type(item[0]) is bool:
+            _tensor = torch.tensor(item, dtype=torch.bool)
+            tensors.append(_tensor)
+
 
         elif type(item[0]) is list:
             if type(item[0][0]) is int:
                 _tensor = torch.tensor(item, dtype=torch.long)
             elif type(item[0][0]) is float:
                 _tensor = torch.tensor(item, dtype=torch.float)
-
-            tensors.append(_tensor)
+            try:
+                tensors.append(_tensor)
+            except:
+                breakpoint()
 
         else:
             raise Exception(str(type(item[0])))
 
-    dataset = TensorDataset(*tensors)
-
-    sampler = RandomSampler(dataset) if shuffle else None
-    dataloader = DataLoader(dataset, sampler=sampler,
-                            batch_size=batch_size, drop_last=drop_last)
-    return dataloader
+    if squeeze_first:
+        tensors = [tensor.squeeze(0) for tensor in tensors]
+    return tuple(tensors)
 
 
 def _convert_feature_to_tensor(features):
@@ -83,9 +94,15 @@ def _convert_feature_to_tensor(features):
     """
     all_idx = torch.tensor([f.idx for f in features], dtype=torch.long)
     all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long)
-    all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.long)
+    all_input_mask = torch.tensor([f.input_mask for f in features], dtype=torch.float)
     all_segment_ids = torch.tensor([f.segment_ids for f in features], dtype=torch.long)
-    return all_idx, all_input_ids, all_input_mask, all_segment_ids
+    all_question_mask = torch.tensor([f.question_mask for f in features], dtype=torch.float)
+    if features[0].pot_spans is not None:
+        all_pot_spans = torch.tensor([f.pot_spans for f in features], dtype=torch.long)
+        all_label_span = torch.tensor([f.label_span for f in features], dtype=torch.long)
+        return all_idx, all_input_ids, all_input_mask, all_segment_ids, all_question_mask, all_pot_spans, all_label_span
+    else:
+        return all_idx, all_input_ids, all_input_mask, all_segment_ids, all_question_mask
 
 
 def _convert_multi_feature_to_tensor(features):
@@ -94,6 +111,7 @@ def _convert_multi_feature_to_tensor(features):
     """
     all_idx = torch.tensor([[f.idx for f in fs] for fs in features], dtype=torch.long)
     all_input_ids = torch.tensor([[f.input_ids for f in fs] for fs in features], dtype=torch.long)
-    all_input_mask = torch.tensor([[f.input_mask for f in fs] for fs in features], dtype=torch.long)
+    all_input_mask = torch.tensor([[f.input_mask for f in fs] for fs in features], dtype=torch.float)
     all_segment_ids = torch.tensor([[f.segment_ids for f in fs] for fs in features], dtype=torch.long)
-    return all_idx, all_input_ids, all_input_mask, all_segment_ids
+    all_question_mask = torch.tensor([[f.question_mask for f in fs] for fs in features], dtype=torch.float)
+    return all_idx, all_input_ids, all_input_mask, all_segment_ids, all_question_mask

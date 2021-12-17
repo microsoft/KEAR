@@ -10,7 +10,6 @@ import random
 import numpy as np
 
 import logging
-# logging.basicConfig(level = logging.INFO,format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +28,6 @@ def get_device(gpu_ids):
     else:
         device_name = 'cpu'
         print('device is cpu')
-    # print('!!!!!device_name=', device_name)
     device = torch.device(device_name)
     return device
 
@@ -65,6 +63,9 @@ class Vn:
 
     def __getitem__(self, key):
         return self.vs[key]
+    
+    def __len__(self):
+        return len(self.vs)
 
     def init(self):
         self.vs = [AvgVar() for i in range(self.n)]

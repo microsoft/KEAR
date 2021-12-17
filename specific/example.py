@@ -1,93 +1,114 @@
 # Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+# Licensed under the MIT license.
 
 from utils.feature import Feature
-import pdb
 
-label_dict = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4}
 
+label_dict = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G':6, 'H': 7, None: -1}
+rel_mapping = {
+                'CausesDesire': "causes desire",
+                'HasProperty': "has property",
+                'CapableOf': 'capable of',
+                'PartOf': 'part of',
+                'AtLocation': 'at location',
+                'Desires': 'desires',
+                'HasPrerequisite': 'has prerequisite',
+                'HasSubevent': 'has subevent',
+                'Antonym': 'antonym',
+                'Causes': 'causes',
+}
+
+
+def maybe_add(base_str, append_str, prepend=False, sep_word='[SEP]'):
+    if base_str is None:
+        return None if append_str is None else append_str
+    if append_str is None:
+        return base_str
+    elif prepend:
+        return f'{append_str} {sep_word} {base_str}'
+    else:
+        return f'{base_str} {sep_word} {append_str}'
 
 class ConceptNetExample:
-    def __init__(self, idx, choice1, choice2, choice3, choice4, choice5, label = -1):
+    max_len = 0
+    all_lens = []
+    def __init__(self, idx, choices, label = -1, append_descr=0, data=None):
         self.idx = idx
-        self.text1 = choice1
-        self.text2 = choice2
-        self.text3 = choice3
-        self.text4 = choice4
-        self.text5 = choice5
+        self.texts = choices
+        self.is_valid = True
         self.label = int(label)
+        self.append_descr = append_descr
+        self.data = data
     
     def __str__(self):
-        return f"{self.idx} | {self.text1} | {self.text2} | {self.text3} | {self.text4} | {self.text5} | {self.label}"
+        return f"{self.idx} | {self.texts} | {self.label}"
+          
+    def tokenize_text(self, tokenizer, max_seq_length, vary_segment_id=False):
         
-    def fl(self, tokenizer, max_seq_length):
-        fs = self.f(tokenizer, max_seq_length)
-        return (*fs, self.label)
-        
-    def f(self, tokenizer, max_seq_length):
-        tokens1 = tokenizer.tokenize(self.text1)
-        tokens2 = tokenizer.tokenize(self.text2)
-        tokens3 = tokenizer.tokenize(self.text3)
-        tokens4 = tokenizer.tokenize(self.text4)
-        tokens5 = tokenizer.tokenize(self.text5)
-
-        feature1 = Feature.make_single(self.idx, tokens1, tokenizer, max_seq_length)
-        feature2 = Feature.make_single(self.idx, tokens2, tokenizer, max_seq_length)
-        feature3 = Feature.make_single(self.idx, tokens3, tokenizer, max_seq_length)
-        feature4 = Feature.make_single(self.idx, tokens4, tokenizer, max_seq_length)
-        feature5 = Feature.make_single(self.idx, tokens5, tokenizer, max_seq_length)
-        return (feature1, feature2, feature3, feature4, feature5)
-        
+        def tokenize(texts):
+            tokens = []
+            for text_data in texts:
+                token_data = {}
+                for key in text_data:
+                    token_data[key] = tokenizer.tokenize(text_data[key]) if isinstance(text_data[key], str) else text_data[key]
+                tokens.append(token_data)
+            return tokens
+        self.tokens = tokenize(self.texts)
         
     @classmethod
-    def load_from_json(cls, json_obj, append_answer_text=False, append_descr=0, append_triple=True):
+    def load_from_json(cls, json_obj, append_answer_text=False, append_descr=0, append_triple=True, 
+                       append_retrieval=0, sep_word='[SEP]',
+                       append_frequent=0, frequent_thres=4):
         choices = json_obj['question']['choices']
-        question_concept = json_obj['question']['question_concept']
-        def mkinput(question_concept, choice):
-            if choice['triple'] and append_triple:
-                triples = ' [SEP] '.join([' '.join(trip) for trip in choice['triple']])
-                first_triple = ' '.join(choice['triple'][0])
-                following_triple = ' [SEP] '.join([' '.join(trip) for trip in choice['triple'][1:]]) if len(choice['triple']) > 1 else None
-                triples_temp = triples
+        question_concept = json_obj['question'].get('question_concept', None)
+                
+        def mkinput(question_concept, choice, is_gt=False):
+            out_data = {}
+            if append_triple:
+                triples_temp_alternate = maybe_add(None, question_concept, sep_word=sep_word)
+                triples_temp_alternate = maybe_add(triples_temp_alternate, choice.get('answer_concept', choice['text']), sep_word=sep_word)
+                if choice['triple']:
+                    choice['triple'][0][1] = rel_mapping[choice['triple'][0][1]] 
+                    triples = f' {sep_word} '.join([' '.join(trip) for trip in choice['triple']])
+                    out_data['triples_temp'] = triples
+                else:
+                    out_data['triples_temp'] = triples_temp_alternate
             else:
-                triples_temp = question_concept + ' [SEP] ' + choice['text']
-                following_triple = None
+                out_data['triples_temp'] = None
+            out_data['is_freq_masked'] = 0
+            if append_frequent and json_obj['question']['major_rel_cnt'] >= frequent_thres and (not choice['is_major_rel']):
+                out_data['is_freq_masked'] = append_frequent
+            if append_descr > 0:
+                out_data['qc_meaning'] = json_obj['question']['qc_meaning']
+                out_data['ac_meaning'] = choice['ac_meaning']
+            else:
+                out_data['qc_meaning'] = None
+                out_data['ac_meaning'] = None
             if append_answer_text:
-                question_text = '{} {}'.format(json_obj['question']['stem'], choice['text'])
+                out_data['question_text'] = '{} {}'.format(json_obj['question']['stem'], choice['text'])
             else:
-                question_text = json_obj['question']['stem']
-            if append_descr == 1:
-                triples_temp = '{} [SEP] {} [SEP] {}'.format(json_obj['question']['qc_meaning'], choice['ac_meaning'], triples_temp)
-            elif append_descr == 2:
-                triples_temp = '{} [SEP] {} [SEP] {}'.format(triples_temp, json_obj['question']['qc_meaning'], choice['ac_meaning']) if following_triple is None else \
-                    '{} [SEP] {} [SEP] {} [SEP] {}'.format(first_triple, json_obj['question']['qc_meaning'], choice['ac_meaning'], following_triple)
-            
-            text = ' {} [SEP] {} '.format(question_text, triples_temp)
-            return text
+                out_data['question_text'] = json_obj['question']['stem']           
+            if append_retrieval > 0:
+                retrieval_texts = choice['retrieval']                
+                out_data['ac_meaning'] = maybe_add(out_data['ac_meaning'], ' '.join(retrieval_texts)) # add retrieval as a part of ac meaning
+            return out_data
 
-        text1 = mkinput(question_concept, choices[0])
-        text2 = mkinput(question_concept, choices[1])
-        text3 = mkinput(question_concept, choices[2])
-        text4 = mkinput(question_concept, choices[3])
-        text5 = mkinput(question_concept, choices[4])
+        texts = []
+        for c_id, choice_data in enumerate(choices):
+            is_gt = (label_dict[json_obj.get('answerKey', None) ] == c_id)
+            texts.append(mkinput(question_concept, choice_data, is_gt))
         try:
             label =  label_dict[json_obj['answerKey']]
         except:
             label = -1
+        if label is None:
+            label = -1
         return cls(
             json_obj['initial_id'],
-            text1,
-            text2,
-            text3,
-            text4,
-            text5,
+            texts,
             label,
+            append_descr,
+            json_obj,
         )
 
-    def to_json(self):
-        return {
-            'ID': self.idx,
-            'Text1': self.text1,
-            'Text2': self.text2,
-            'Label': self.label
-        }
+

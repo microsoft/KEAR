@@ -1,42 +1,26 @@
 # Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
+# Licensed under the MIT license.
 
 import math
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pdb
-
-class AttentionMerge(nn.Module):
-    """
-    H (B, L, hidden_size) => h (B, hidden_size)
-    """
-    def __init__(self, input_size, attention_size, dropout_prob):
-        super(AttentionMerge, self).__init__()
-        self.attention_size = attention_size
-        self.hidden_layer = nn.Linear(input_size, self.attention_size)
-        self.query_ = nn.Parameter(torch.Tensor(self.attention_size, 1))
-        self.dropout = nn.Dropout(dropout_prob)
-
-        self.query_.data.normal_(mean=0.0, std=0.02)
-
-    def forward(self, values, mask=None):
-        """
-        (b, l, h) -> (b, h)
-        """
-        if mask is None:
-            mask = torch.zeros_like(values)
-        else:
-            mask = (1 - mask.unsqueeze(-1).type(torch.float)) * -1000.
-        keys = self.hidden_layer(values)
-        keys = torch.tanh(keys)
-        query_var = torch.var(self.query_)
-        # (b, l, h) + (h, 1) -> (b, l, 1)
-        attention_probs = keys @ self.query_ / math.sqrt(self.attention_size * query_var)
-        attention_probs = F.softmax(attention_probs * mask, dim=1)
-        attention_probs = self.dropout(attention_probs)
-
-        context = torch.sum(attention_probs + values, dim=1)
-        return context
-
+        
+class ChoicePredictor(nn.Module):
+    def __init__(self, config, opt):
+        super(ChoicePredictor, self).__init__()
+        final_dropout_prob = opt['final_pred_dropout_prob'] # add a parameter here to ensure backward safety
+        self.dropout = nn.Dropout(final_dropout_prob)
+        out_dim = config.hidden_size
+        self.scorer = nn.Linear(out_dim, 1)
+        self.config = config
+        self.my_config = opt
+    
+    def forward(self, outputs, attention_mask):
+        h12 = outputs[0][:, 0, :]
+        h12 = self.dropout(h12)
+        num_choices = attention_mask.size(1)
+        h12 = h12.view(-1, num_choices, self.config.hidden_size)
+        logits = self.scorer(h12).view(-1, num_choices)
+        return logits

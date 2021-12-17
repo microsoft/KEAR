@@ -137,14 +137,10 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-.vscode/*
+.vscode/
 wandb/
 lightning_logs/
 .lock
 
 .DS_Store
-csqa_jessionlin/pt_results/*
-csqa_jessionlin/result_1.txt
-output/*
-
-data/model/
+test/*

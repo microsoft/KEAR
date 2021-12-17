@@ -1,0 +1,13 @@
+{
+  "fp16": {
+    "enabled": false
+  },
+  "zero_optimization": {
+    "stage": 2,
+    "reduce_bucket_size": 5e7,
+    "allgather_bucket_size": 1.25e9,
+    "overlap_comm": true,
+    "contiguous_gradients": true
+  },
+  "zero_allow_untested_optimizer": true
+}

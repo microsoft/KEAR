@@ -13,6 +13,3 @@ def mkdir_if_notexist(dir_):
     if not os.path.exists(dirname):
         os.makedirs(dirname)
             
-
-
-
