@@ -24,6 +24,7 @@ This package achieves the state-of-art performance of 86.1% (single model), 89.4
 
 2. run docker </br>
    ```> nvidia-docker run -it --mount src='/',target=/workspace/,type=bind yichongx/csqa:human_parity /bin/bash``` </br>
+   ```> cd /workspace/path/to/repo``` </br>
     Please refer to the following link if you first use docker: https://docs.docker.com/
 
 ## Features
