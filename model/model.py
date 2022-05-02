@@ -48,7 +48,7 @@ class Model(PreTrainedModel):
         elif model_type == 'roberta':
             self.roberta = RobertaModel(config)
         elif model_type == 'debertav2':
-            self.deberta = MyDebertaV2Model(config)
+            self.deberta = DebertaV2Model(config)
         else:
             raise ValueError('Model type not supported.')
 
