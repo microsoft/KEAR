@@ -4,7 +4,7 @@ This PyTorch package implements the KEAR model that surpasses human on the Commo
 
 Yichong Xu, Chenguang Zhu, Shuohang Wang, Siqi Sun, Hao Cheng, Xiaodong Liu, Jianfeng Gao, Pengcheng He, Michael Zeng and Xuedong Huang<br/>
 [Human Parity on CommonsenseQA: Augmenting Self-Attention with External Attention](https://arxiv.org/pdf/2112.03254.pdf)</br>
-arXiv:2112.03254, 2021<br/>
+The 31st International Joint Conference on Artificial Intelligence (IJCAI-22). <br/>
 
 The package also includes codes for our earilier DEKCOR model as in:
 
