@@ -33,13 +33,12 @@ def _load_data_conceptnet(file_name, type='json', config=None, is_train=False):
         example.is_valid = True
         examples.append(example)
     world_size = my_dist.get_world_size()
-    if not is_train:
-        total_len = len(examples)
-        while total_len % world_size != 0:
-            new_example = deepcopy(examples[0])
-            new_example.is_valid = False
-            examples.append(new_example)
-            total_len = len(examples)        
+    total_len = len(examples)
+    while total_len % world_size != 0:
+        new_example = deepcopy(examples[0])
+        new_example.is_valid = False
+        examples.append(new_example)
+        total_len = len(examples)        
     print(f'data: {len(examples)}, world_size: {world_size}')
     return examples
 
