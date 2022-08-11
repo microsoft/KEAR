@@ -80,7 +80,7 @@ class MCDataset(Dataset):
             main_tokens = token_data['question_text']
             if token_data['is_freq_masked']:
                 choice_mask[c_id] = 1.0 # 1 means masked
-            elif example.append_descr == 1:
+            if example.append_descr == 1:
                 context_tokens = self.append_context([], token_data['qc_meaning'])
                 context_tokens = self.append_context(context_tokens, token_data['ac_meaning'])
                 context_tokens = self.append_context(context_tokens, token_data['triples_temp'])
